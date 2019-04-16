@@ -1,0 +1,98 @@
+import pandas as pd
+import numpy as np
+import warnings
+warnings.filterwarnings('ignore')
+def risk_metric(df):
+  
+  df['stdev3'] = 0.0
+  df['stdev5'] = 0.0
+  df['stdev10'] = 0.0
+  for i in range(0,len(df)):
+    df['stdev3'][i] = np.std([df['Return 1 Year (%) Regular'][i], df['Return 3 Year (%) Regular'][i]]) 
+    df['stdev5'][i] = np.std([df['Return 1 Year (%) Regular'][i], df['Return 3 Year (%) Regular'][i], df['Return 5 Year (%) Regular'][i]])
+    df['stdev10'][i] = np.std([df['Return 1 Year (%) Regular'][i], df['Return 3 Year (%) Regular'][i], df['Return 5 Year (%) Regular'][i], df['Return 10 Year (%) Regular'][i]])
+  
+  max_3 = df['stdev3'].max()
+  max_5 = df['stdev5'].max()
+  max_10 = df['stdev10'].max()
+  
+  df['Risk Score of 3 Years'] = 0.0
+  df['Risk Score of 5 Years'] = 0.0
+  df['Risk Score of 10 Years'] = 0.0
+  df['Risk'] = 0.0
+  df['RiskTag'] = 0.0
+  df['Returns'] = 0.0
+  df['ReturnsTag'] = 0.0
+  
+  for i in range(0,len(df)):
+    df['Risk Score of 3 Years'][i] = ((df['stdev3'][i])/max_3)*10.0
+    df['Risk Score of 5 Years'][i] = ((df['stdev5'][i])/max_5)*10.0
+    df['Risk Score of 10 Years'][i] = ((df['stdev10'][i])/max_10)*10.0
+    df['Returns'][i] = (df['Return 1 Year (%) Regular'][i] + df['Return 3 Year (%) Regular'][i] + df['Return 5 Year (%) Regular'][i] + df['Return 10 Year (%) Regular'][i])/4
+    df['Risk'][i] = (df['Risk Score of 3 Years'][i]+df['Risk Score of 5 Years'][i]+df['Risk Score of 10 Years'][i])/3
+    
+  mean=df['Risk'].mean()
+  std=df['Risk'].std()
+  mean1=df['Returns'].mean()
+  std1=df['Returns'].std()
+  for i in range(0,len(df)):
+    if(df['Risk'][i]>(mean+0.2*std)):
+        df['RiskTag'][i]=3 
+    if(df['Risk'][i]<(mean-0.2*std)):
+        df['RiskTag'][i]=1
+    else:
+        if(df['Risk'][i]>(mean-0.2*std) and df['Risk'][i]<(mean+0.2*std)):
+            df['RiskTag'][i]=2
+    if(df['Returns'][i]>(mean1+0.2*std1)):
+        df['ReturnsTag'][i]=3 
+    if(df['Returns'][i]<(mean1-0.2*std1)):
+        df['ReturnsTag'][i]=1
+    else:
+        if(df['Returns'][i]>(mean1-0.2*std1) and df['Returns'][i]<(mean1+0.2*std1)):
+            df['ReturnsTag'][i]=2
+
+            
+            
+            
+  Q1=eval(input("Select your goal of investing (1 for WealthGrowth (fixed risk & maximum returns) OR 2 for FixedEarnings (fixed returns & minimum risk))"))
+  
+  def RiskFix(df):
+    
+    
+        
+        Q2=eval(input("Risk Tolerence (3-High Risk, 2-Moderate Risk, 1-Low Risk)"))
+        if (Q2>3 or Q2<1):
+            print ("Please Enter 1,2 or 3")
+        else:
+            test1=(df['RiskTag']==Q2)
+            test3=df[test1]
+            test4=test3[['Scheme Name','Returns']]
+            return test4
+            
+        
+  def ReturnFix(df):
+        Q3=eval(input("Enter minimum return required (in %)"))
+       
+        test2=(df['Returns']>=Q3)
+        test3=df[test2]
+        test4=test3[['Scheme Name','Risk']]
+        return test4
+            
+        
+    
+    
+    
+             
+  if(Q1==1):
+       r = df.sort_values(by='Returns', ascending=False)
+       p=RiskFix(r)
+  else:
+      if(Q1==2):
+            r = df.sort_values(by='Risk', ascending=True)
+            
+            p=ReturnFix(r)
+      else:
+        print("Enter 1 or 2")
+  return p  
+  df = pd.read_csv('1.csv', delimiter=',')
+  risk_metric(df)
